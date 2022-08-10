@@ -3,8 +3,10 @@ library(stringr)
 library(ggplot2)
 library(reshape2)
 
-setwd("/Users/nehamishra//Projects/DNMT3A/")
+#Set working directory
+setwd("~/")
 
+#Filter GO results for significance, minimum number of genes, ontology, unique gene sets and maximum number of terms
 filter_go_results <- function(go_results, top_num){
   go_results <- subset(go_results, go_results$Fisher.elim < 0.05)
   go_results <- subset(go_results, go_results$Significant > 1)
@@ -44,6 +46,7 @@ filter_go_results <- function(go_results, top_num){
   
 }
 
+#Group GO results 
 get_group_go_data <- function(groups, n_terms){
   plist <- vector('list', length(groups))
   go_list <- c()
@@ -89,34 +92,8 @@ get_group_go_data <- function(groups, n_terms){
 groups <- c("invitro/AF_Caco2_DNMT3A/DESeq2_results/WT_vs_3AKO/DESeq2result_WT_vs_3AKO_unpaired_GO_up.txt", 
             "invivo/RNAseq/DESeq2_results/DESeq2result_WT_vs_KO_up_GO.txt")
 group_go_data_up <- get_group_go_data(groups, 20)
-groups <- c("invitro/AF_Caco2_DNMT3A/DESeq2_results/WT_vs_3AKO/DESeq2result_WT_vs_3AKO_unpaired_GO_down.txt", 
-            "invivo/RNAseq/DESeq2_results/DESeq2result_WT_vs_KO_down_GO.txt")
-group_go_data_down <- get_group_go_data(groups, 20)
 
-groups <- c("invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/Hypomethlated_genes_in_KO_GO.txt", 
-            "invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/Hypomethlated_promoters_in_KO_GO.txt")
-group_go_data_up <- get_group_go_data(groups, 50)
-
-groups <- c("invivo/RNAseq/DESeq2_results/Up_DEGs_with_DMPs_in_5000bp_beadchip_GO.txt", 
-            "invivo/RNAseq/DESeq2_results/Down_DEGs_with_DMPs_in_5000bp_beadchip_GO.txt")
-group_go_data_up <- get_group_go_data(groups, 50)
-
-groups <- c("invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS5_analysis/DMPr_DSS5_WT_only_GO.txt", 
-            "invivo/Methylation_BeadCHiP/Downstream_analysis/KO_DSS5_analysis/DMPr_DSS5_KO_only_GO.txt", 
-            "invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS5_analysis/DMPr_DSS5_WT_KO_overlap_GO.txt", 
-            "invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS12_analysis/DMPr_DSS12_WT_only_GO.txt", 
-            "invivo/Methylation_BeadCHiP/Downstream_analysis/KO_DSS12_analysis/DMPr_DSS12_KO_only_GO.txt", 
-            "invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS12_analysis/DMPr_DSS12_WT_KO_overlap_GO.txt")
-group_go_data_up <- get_group_go_data(groups, 50)
-
-#group_go_data_up <- group_go_data_up[complete.cases(group_go_data_up[ , 3:ncol(group_go_data_up)]),]
-#group_go_data_down <- group_go_data_down[complete.cases(group_go_data_down[ , 3:ncol(group_go_data_down)]),]
-
-groups <- c("Hypomethylated genes", "Hypomethylated promoters")
-groups <- c("Upregulated DNAm-DEGs", "Downregulated DNAm-DEGs")
-groups <- c("DSS5 WT only", "DSS5 KO only", "DSS5 WT-KO overlap", 
-            "DSS12 WT only", "DSS12 KO only", "DSS12 WT-KO overlap")
-
+#Reformat data for plotting
 p_vector <- colnames(group_go_data_up)[grep("p_", colnames(group_go_data_up))]
 n_vector <- colnames(group_go_data_up)[grep("n_", colnames(group_go_data_up))]
 plot_data_up <- melt(group_go_data_up[, c("GO.ID", "Term", p_vector)], id.vars = c("GO.ID","Term"))
@@ -141,41 +118,18 @@ plot_data <- plot_data_up
 plot_data$Term2 <- str_wrap(plot_data$Term2, width = 60)
 plot_data$Term2 <- reorder(plot_data$Term2, 1:nrow(plot_data))
 
-#cairo_ps("invivo/RNAseq/DESeq2_results/invitro_invivo_top_GO_terms.ps", width = 9, height = 14)
-# cairo_ps("invivo/RNAseq/DESeq2_results/DEGs_with_DMPs_in_5000bp_beadchip_Selected_GO_terms.ps", width = 8, height = 7)
-# p <- ggplot(plot_data, mapping = aes(x=Group, y=Term2, size=n, color=p))
-# p <- p + geom_point()
-# p <- p + scale_x_discrete(limits=groups)
-# #p <- p + scale_x_discrete(labels=c("Hypomethylated genes", "Hypomethylated promoters"))
-# p <- p + xlab("") + ylab("GO Term")
-# #p <- p + scale_colour_gradient2(high="#990000", low="#FF9999")
-# p <- p + scale_colour_gradient2(high="#660000", low="#000066", mid="white", name = "-log10p") 
-# p <- p + scale_size(name = "Gene-ratio")
-# p <- p + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
-#                             axis.text.x = element_text(size=14, color = "black", angle = 45, hjust = 1), 
-#                             axis.title = element_text(size = 20))
-# p
-# dev.off()
-
-
-selected_go_tems <- c(read.table("invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS5_analysis/Selected_DMPr_DSS5_WT_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("invivo/Methylation_BeadCHiP/Downstream_analysis/KO_DSS5_analysis/Selected_DMPr_DSS5_KO_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS5_analysis/Selected_DMPr_DSS5_WT_KO_overlap_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS12_analysis/Selected_DMPr_DSS12_WT_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("invivo/Methylation_BeadCHiP/Downstream_analysis/KO_DSS12_analysis/Selected_DMPr_DSS12_KO_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("invivo/Methylation_BeadCHiP/Downstream_analysis/WT_DSS12_analysis/Selected DMPr_DSS12_WT_KO_overlap_GO.txt", sep = '\t', header = TRUE)$GO.ID)
-selected_plot_data <- subset(plot_data, plot_data$GO.ID %in% selected_go_tems)
-
-cairo_ps("invivo/Methylation_BeadCHiP/Downstream_analysis/DSS_promoter_selected_GO.ps", width = 8, height = 9)
-p <- ggplot(selected_plot_data, mapping = aes(x=Group, y=Term2, size=n, color=p))
+#Plot result
+cairo_ps("invivo/RNAseq/DESeq2_results/invitro_invivo_top_GO_terms.ps", width = 9, height = 14)
+p <- ggplot(plot_data, mapping = aes(x=Group, y=Term2, size=n, color=p))
 p <- p + geom_point()
 p <- p + scale_x_discrete(limits=groups)
 p <- p + xlab("") + ylab("GO Term")
-#p <- p + scale_colour_gradient2(high="#990000", low="#FF9999")
-p <- p + scale_colour_gradient2(high="#660000", low="#000066", mid="white", "-log10p")
+p <- p + scale_colour_gradient2(high="#660000", low="#000066", mid="white", name = "-log10p") 
 p <- p + scale_size(name = "Gene-ratio")
 p <- p + theme_bw() + theme(axis.text.y = element_text(hjust = 1, size=12, color = "black"), 
-                            axis.text.x = element_text(size=14, color = "black", angle = 45, hjust = 1), 
-                            axis.title = element_text(size = 20))
+                             axis.text.x = element_text(size=14, color = "black", angle = 45, hjust = 1), 
+                             axis.title = element_text(size = 20))
 p
 dev.off()
+
+
