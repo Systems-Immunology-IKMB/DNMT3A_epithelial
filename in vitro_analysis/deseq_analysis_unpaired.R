@@ -2,7 +2,7 @@ library(magrittr)
 library(DESeq2)
 
 #set working directory to project directory
-setwd("/home/user/Projects/AF_Caco2_DNMT3A/")
+setwd("~/")
 #create result directory if it does not already exists
 if (!dir.exists("DESeq2_results/")){
   dir.create("DESeq2_results/")
@@ -11,22 +11,16 @@ if (!dir.exists("DESeq2_results/")){
 species <- "human"
 
 #define conditions to compare
-condition1 <- 'siWT'
+condition1 <- 'WT'
 condition2 <- '3AKO'
 
 #read merged count data and sample info file
-count_data1 <- read.table("expression_counts/merged_gene_counts.txt", header = TRUE, sep = '\t', row.names = 1)
-count_data2 <- read.table("expression_counts/merged_gene_counts_si_control.txt", header = TRUE, sep = '\t', row.names = 1)
-count_data <- cbind(count_data1, count_data2)
+count_data <- read.table("expression_counts/merged_gene_counts.txt", header = TRUE, sep = '\t', row.names = 1)
 col_data <- read.csv("info_files/Sample_info.csv")
 colnames(count_data) <- col_data$Sample.name
 
 #filter col_data and count_data based on conditions
 col_data <- subset(col_data, col_data$Condition %in% c(condition1, condition2))
-#col_data$Condition <- as.character(col_data$Condition)
-#col_data$Sample_id <- as.character(col_data$Sample_id)
-#col_data$Sample.name <- as.character(col_data$Sample.name)
-#col_data$Barcode <- as.character(col_data$Barcode)
 count_data <- count_data[, as.character(col_data$Sample.name)]
 
 #create output directory if it does not already exists
@@ -56,13 +50,8 @@ write.table(res_sorted, file = paste(output_directory, "DESeq2result_", conditio
             sep="\t", quote=FALSE)
 
 #Add gene symbols
-if (species == "mouse") {
-  mart_export <- read.table("/home/user/Projects/reference/mouse/GRCm38_mart_export.txt", header = T, sep="\t")
-}else if (species == "human"){
-  mart_export <- read.table("/home/user/Projects/reference/human/GRCh38_mart_export.txt", header = T, sep="\t") 
-}
 
-#mart_export <- read.table("mart_export.txt", header = T, sep = '\t')
+mart_export <- read.table("mart_export.txt", header = T, sep = '\t')
 unique_mart <- subset(mart_export, duplicated(mart_export$Gene_stable_ID) == FALSE)
 rownames(unique_mart) <- unique_mart$Gene_stable_ID
 res_sorted$gene <- unique_mart[rownames(res_sorted), ]$Gene_name
