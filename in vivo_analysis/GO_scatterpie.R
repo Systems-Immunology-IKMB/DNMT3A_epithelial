@@ -2,9 +2,10 @@ library(GO.db)
 library(stringr)
 library(ggplot2)
 library(reshape2)
+#Set working directory
+setwd("~/")
 
-setwd("/Users/nehamishra//Projects/DNMT3A/")
-
+#Filter GO results for significance, minimum number of genes, ontology, unique gene sets and maximum number of terms
 filter_go_results <- function(go_results, top_num){
   go_results <- subset(go_results, go_results$Fisher.elim < 0.05)
   go_results <- subset(go_results, go_results$Significant > 1)
@@ -43,48 +44,37 @@ filter_go_results <- function(go_results, top_num){
   }
   
 }
-
+#Group GO results 
 get_group_go_data <- function(groups, n_terms, dmp_data){
   plist <- vector('list', length(groups))
   go_list <- c()
   go_terms <- c()
   for (i in 1:length(groups)) {
-    #print(modules[i])
+   
     go_results <- read.csv(groups[i], 
                            header = TRUE, sep = '\t')
     go_results <- subset(go_results, go_results$Fisher.elim < 0.05)
     go_results <- subset(go_results, go_results$Significant > 1)
     go_results <- get_hyper_hypo_number(go_results, dmp_data[[i]])
-    #print(nrow(go_results))
+   
     top_go_results <- filter_go_results(go_results, n_terms)
-    #print(top_go_results)
+   
     go_list <- c(go_list, as.character(top_go_results$GO.ID))
     go_terms <- c(go_terms, as.character(top_go_results$Term2))
     plist[[i]] <- go_results
     
   }
-  
-  # p_vector <- c()
-  # n_vector <- c()
-  # for (i in 1:length(groups)) {
-  #   p_vector <- c(p_vector, paste("p", i, sep = '_'))
-  #   n_vector <- c(n_vector, paste("n", i, sep = '_'))
-  # }
-  # 
-  # go_data <- data.frame(GO.ID=go_list, Term=go_terms)
-  # go_data[, p_vector] <- NA
-  # go_data[, n_vector] <- NA
-  
+ 
   go_data <- data.frame()
   
   for (i in 1:length(groups)) {
-    #print(i)
+   
     df <- plist[[i]]
     rownames(df) <- as.character(df$GO.ID)
-    #print(nrow(df))
+   
     group_go_data <- df[intersect(go_list, rownames(df)),]
     group_go_data$group <- groups[i]
-    #print(nrow(group_go_data))
+   
     go_data <- rbind(go_data, group_go_data)
     
   }
@@ -92,6 +82,7 @@ get_group_go_data <- function(groups, n_terms, dmp_data){
   return(go_data)
 }
 
+#Get number of hyper and hypomethylated genes for each GO term
 get_hyper_hypo_number <- function(go_results, dmpr_results){
   hypermethylated_promoters <- subset(dmpr_results, dmpr_results$mean.mean.diff < 0)$symbol
   hypomethylated_promoters <- subset(dmpr_results, dmpr_results$mean.mean.diff > 0)$symbol
@@ -133,20 +124,13 @@ plot_data$Term <- Term(as.vector(plot_data$GO.ID))
 plot_data$Term2 <- str_wrap(plot_data$Term, width = 60)
 plot_data$Term2 <- reorder(plot_data$Term2, 1:nrow(plot_data))
 
-selected_go_tems <- c(read.table("Downstream_analysis/WT_DSS5_analysis/Selected_DMPr_DSS5_WT_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("Downstream_analysis/KO_DSS5_analysis/Selected_DMPr_DSS5_KO_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("Downstream_analysis/WT_DSS5_analysis/Selected_DMPr_DSS5_WT_KO_overlap_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("Downstream_analysis/WT_DSS12_analysis/Selected_DMPr_DSS12_WT_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("Downstream_analysis/KO_DSS12_analysis/Selected_DMPr_DSS12_KO_only_GO.txt", sep = '\t', header = TRUE)$GO.ID, 
-                      read.table("Downstream_analysis/WT_DSS12_analysis/Selected DMPr_DSS12_WT_KO_overlap_GO.txt", sep = '\t', header = TRUE)$GO.ID)
-selected_plot_data <- subset(plot_data, plot_data$GO.ID %in% selected_go_tems)
-selected_plot_data <- transform(selected_plot_data, y=match(GO.ID, unique(GO.ID)))
-selected_plot_data <- transform(selected_plot_data, x=match(group, unique(group)))
-selected_plot_data$radius <- selected_plot_data$p * 0.2
+plot_data <- transform(plot_data, y=match(GO.ID, unique(GO.ID)))
+plot_data <- transform(plot_data, x=match(group, unique(group)))
+plot_data$radius <- plot_data$p * 0.2
 
-
+#Plot results
 pdf("Downstream_analysis/DSS_promoter_selected_GO_scatterpie.pdf", width = 8, height = 9)
-p <- ggplot() + geom_scatterpie(aes(x=x, y=y, r=radius), data = selected_plot_data, cols = c("Hypermethylated", "Hypomethylated"), color=NA) + coord_equal()
+p <- ggplot() + geom_scatterpie(aes(x=x, y=y, r=radius), data = plot_data, cols = c("Hypermethylated", "Hypomethylated"), color=NA) + coord_equal()
 p <- p + geom_point()
 p <- p + scale_x_continuous(breaks = 1:6, labels = unique(selected_plot_data$group))
 p <- p + scale_y_continuous(breaks = 1:max(selected_plot_data$y), labels = unique(selected_plot_data$Term2))
