@@ -3,7 +3,7 @@
 # adjust parameters to get the desired analysis
 
 #path to data.files
-data.dir <- "/work_ifs/sukmb414/DNMT3A/220411_MouseEPIC_Dora/"
+data.dir <- "~/"
 
 idat.dir <- file.path(data.dir, "iDat/")
 
@@ -81,20 +81,13 @@ rnb.options(filtering.high.coverage.outliers = FALSE)
 rnb.options(filtering.deviation.threshold = 0)
 
 
-#rnb.load.annotation.from.db("ensembleRegBuildBPall")
-#rnb.load.annotation.from.db("ensembleRegBuildBPproximal")
-#rnb.load.annotation.from.db("ensembleRegBuildBPdistal")
 rnb.options(region.types=c("promoters","genes","cpgislands","tiling")) 
 
 
 rnb.options(differential.site.test.method = "limma") #limma"
 rnb.options(differential.comparison.columns = c("Condition"))
-#rnb.options(differential.comparison.columns.all.pairwise = c("CTRL_Vs_MSA_Npos",
- #                                                            "ExVivoNpos_Vs_InVitroNpos",
-  #                                                           "Npos_Vs_Nneg"))
 
 rnb.options(covariate.adjustment.columns = NULL)
-#rnb.options(columns.pairing = c("week_unified"="code"))
 rnb.options(differential.adjustment.sva = TRUE)
 rnb.options(differential.adjustment.celltype = FALSE)
 rnb.options(differential.enrichment = FALSE)
