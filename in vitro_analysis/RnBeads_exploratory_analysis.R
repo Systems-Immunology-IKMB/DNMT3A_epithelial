@@ -1,5 +1,5 @@
 #path to data.files
-data.dir <- "/Users/neha/Projects/DNMT3A/invitro/Antonella_EPIC/"
+data.dir <- "~/"
 
 idat.dir <- file.path(data.dir, "iDats/")
 
@@ -35,7 +35,7 @@ rnb.options(import = TRUE)
 rnb.options(preprocessing = TRUE)
 rnb.options(qc = TRUE)
 rnb.options(inference = FALSE)
-rnb.options(exploratory = FALSE)
+rnb.options(exploratory = TRUE)
 rnb.options(differential = FALSE)
 
 ##############some selected options (see more at help("rnb.options"))
@@ -84,12 +84,8 @@ rnb.options(region.types=c("promoters","genes","cpgislands","tiling","ensembleRe
 
 rnb.options(differential.site.test.method = "ttest") #limma"
 rnb.options(differential.comparison.columns = c("Sample_Group"))
-#rnb.options(differential.comparison.columns.all.pairwise = c("CTRL_Vs_MSA_Npos",
-#                                                            "ExVivoNpos_Vs_InVitroNpos",
-#                                                           "Npos_Vs_Nneg"))
 
 rnb.options(covariate.adjustment.columns = NULL)
-#rnb.options(columns.pairing = c("Timepoint"="Patient"))
 rnb.options(differential.adjustment.sva = TRUE)
 rnb.options(differential.adjustment.celltype = FALSE)
 rnb.options(differential.enrichment.go = TRUE)
