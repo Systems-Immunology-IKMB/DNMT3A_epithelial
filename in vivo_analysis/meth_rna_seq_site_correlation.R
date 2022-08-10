@@ -1,5 +1,6 @@
 library(dplyr)
 
+#set working directory
 setwd("/Users/nehamishra/Projects/DNMT3A/")
 
 rescued_genes1 <- read.table("invitro/AF_Caco2_DNMT3A/DESeq2_results/rescued_genesinKO_UP.txt")
@@ -24,14 +25,20 @@ hg_genes <- subset(hg_genes, hg_genes$mmusculus_homolog_ensembl_gene != '')
 #gene_meth_sites <- subset(gene_meth_sites, gene_meth_sites$Gene_id %in% hg_genes$mmusculus_homolog_ensembl_gene)
 gene_meth_sites <- subset(gene_meth_sites, gene_meth_sites$Gene_id %in% rownames(invivo_degs))
 
+#Read methylation data for sites
 methylation_data <- read.csv("invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/site_meth_data.txt", header = TRUE, sep = '\t')
 
+#Read transcriptome data for genes
 transcriptome_data <- read.csv("invivo/RNAseq/count_files/normalized_gene_counts.txt", header = TRUE, sep = '\t')
 colnames(transcriptome_data) <- c("Dnmt3aVillin717", "Dnmt3aVillin718", "Dnmt3aVillin719", "Dnmt3aVillin720", "Dnmt3aVillin721", "Dnmt3aVillin722", "Dnmt3aVillin723", "Dnmt3aVillin724")
+
+#Match transcriptome and methylation samples
 common_samples <- intersect(colnames(transcriptome_data), colnames(methylation_data))
 transcriptome_data <- transcriptome_data[, common_samples]
 methylation_data <- methylation_data[, common_samples]
 
+
+#Calculate correlation coefficient between genes and nearby methylation sites
 gene_meth_sites$meth_id <- as.character(gene_meth_sites$meth_id)
 gene_meth_sites$Gene_id <- as.character(gene_meth_sites$Gene_id)
 gene_meth_site_correlation <- list()
