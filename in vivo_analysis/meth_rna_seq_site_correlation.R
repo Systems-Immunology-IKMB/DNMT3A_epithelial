@@ -1,29 +1,26 @@
 library(dplyr)
 
 #set working directory
-setwd("/Users/nehamishra/Projects/DNMT3A/")
+setwd("~/")
 
-rescued_genes1 <- read.table("invitro/AF_Caco2_DNMT3A/DESeq2_results/rescued_genesinKO_UP.txt")
+#Read list of in vitro rescued genes
+rescued_genes1 <- read.table("invitro/DESeq2_results/rescued_genesinKO_UP.txt")
 rescued_genes1 <- rescued_genes1$V1
-rescued_genes2 <- read.table("invitro/AF_Caco2_DNMT3A/DESeq2_results/rescued_genesinKO_Down.txt")
+rescued_genes2 <- read.table("invitro/DESeq2_results/rescued_genesinKO_Down.txt")
 rescued_genes2 <- rescued_genes2$V1
 rescued_genes <- union(rescued_genes1, rescued_genes2)
 
+#Read list of murine genes and their overlapping methylation sites
 gene_meth_sites <- read.csv("invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/gene_meth_overlap_sites_table.txt", header = TRUE, sep = '\t')
-invivo_degs <- read.csv("invivo/RNAseq/DESeq2_results/DESeq2result_WT_vs_KO_genenames.txt", header = TRUE, sep = '\t')
-invivo_degs <- subset(invivo_degs, invivo_degs$padj < 0.05)
 
-
+#Get orthologous human genes for murine genes
 library(biomaRt)
 hg_ensembl=useMart("ENSEMBL_MART_ENSEMBL")
 hg_mart <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
 hg_genes <- getBM(attributes = c("ensembl_gene_id", "external_gene_name", "mmusculus_homolog_ensembl_gene"), mart = hg_mart)
-
-#hg_genes <- subset(hg_genes, hg_genes$ensembl_gene_id %in% rescued_genes_meth_site_correlation_5000bp_10000rep$Gene)
 hg_genes <- subset(hg_genes, hg_genes$mmusculus_homolog_ensembl_gene != '')
 
-#gene_meth_sites <- subset(gene_meth_sites, gene_meth_sites$Gene_id %in% hg_genes$mmusculus_homolog_ensembl_gene)
-gene_meth_sites <- subset(gene_meth_sites, gene_meth_sites$Gene_id %in% rownames(invivo_degs))
+gene_meth_sites <- subset(gene_meth_sites, gene_meth_sites$Gene_id %in% hg_genes$mmusculus_homolog_ensembl_gene)
 
 #Read methylation data for sites
 methylation_data <- read.csv("invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/site_meth_data.txt", header = TRUE, sep = '\t')
@@ -73,31 +70,19 @@ gene_meth_site_correlation <- do.call(rbind.data.frame, gene_meth_site_correlati
 gene_meth_site_correlation$Gene_name <- gene_meth_sites$Gene_name
 gene_meth_site_correlation <- gene_meth_site_correlation[order(gene_meth_site_correlation$FDR), ]
 
-write.table(gene_meth_site_correlation, "invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/invivo_DEG_site_correlation.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+#Output results
+write.table(gene_meth_site_correlation, "invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/invitro_rescued_genes_site_correlation_invivo.txt", quote = FALSE, row.names = FALSE, sep = '\t')
 
-dmp_sites <- read.csv("invivo/Methylation_BeadCHiP/Analysis/reports_baseline/differential_methylation_data/diffMethTable_site_cmp1.csv", 
-                      header = TRUE)
-dmp_sites <- subset(dmp_sites, dmp_sites$combinedRank <= 54861)
-deg_dmp_site_correlation <- subset(gene_meth_site_correlation, gene_meth_site_correlation$Site %in% dmp_sites$cgid)
-write.table(deg_dmp_site_correlation, "invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/invivo_DEG_DMP_correlation.txt", quote = FALSE, row.names = FALSE, sep = '\t')
+#Compare in vivo and in vitro correlations
+invitro_rescued_gene_site_correlation <- read.csv("invitro/Downstream_analysis/rescued_genes_meth_site_correlation_5000bp_10000rep.txt", sep = '\t')
 
-
-gene_meth_site_correlation1 <- inner_join(gene_meth_site_correlation, hg_genes, by=c("Gene"="mmusculus_homolog_ensembl_gene"))
-rescued_genes_gene_meth_site_correlation <- subset(gene_meth_site_correlation1, gene_meth_site_correlation1$ensembl_gene_id %in% rescued_genes)
-
-write.table(gene_meth_site_correlation1, "invivo/Methylation_BeadCHiP/Downstream_analysis/gene_site_correlation.txt", quote = FALSE, row.names = FALSE, sep = '\t')
-write.table(rescued_genes_gene_meth_site_correlation, "invivo/Methylation_BeadCHiP//Downstream_analysis/invitro_rescued_genes_gene_site_correlation.txt", quote = FALSE, row.names = FALSE, sep = '\t')
-
-rescued_genes_gene_meth_site_correlation <- read.csv("invivo/Methylation_BeadCHiP/Downstream_analysis/Baseline_analysis/invitro_rescued_genes_gene_site_correlation.txt", sep = '\t')
-invitro_rescued_gene_site_correlation <- read.csv("invitro/Antonella_EPIC/Downstream_analysis/rescued_genes_meth_site_correlation_5000bp_10000rep.txt", sep = '\t')
-
-gene_list <- unique(rescued_genes_gene_meth_site_correlation[, c("Gene", "ensembl_gene_id")])
+gene_list <- unique(gene_meth_site_correlation[, c("Gene", "ensembl_gene_id")])
 gene_list$Gene <- as.character(gene_list$Gene)
 gene_list$ensembl_gene_id <- as.character(gene_list$ensembl_gene_id)
 invivo_invitro_comparison <- list()
 
 for (i in 1:nrow(gene_list)) {
-  list1 <- subset(gene_meth_site_correlation1, gene_meth_site_correlation1$Gene == gene_list$Gene[i])
+  list1 <- subset(gene_meth_site_correlation, gene_meth_site_correlation$Gene == gene_list$Gene[i])
   list1 <- subset(list1, !is.na(list1$Rho))
   list2 <- subset(invitro_rescued_gene_site_correlation, invitro_rescued_gene_site_correlation$Gene == gene_list$ensembl_gene_id[i])
   tup <- c(gene_list$Gene[i], gene_list$ensembl_gene_id[i], list1[which(abs(list1$Rho) == max(abs(list1$Rho)))[1], "Rho"], list1[which(abs(list1$Rho) == max(abs(list1$Rho)))[1], "FDR"], 
@@ -115,8 +100,7 @@ invivo_invitro_comparison$FDR.invitro <- as.numeric(as.character(invivo_invitro_
 
 write.table(invivo_invitro_comparison, "invivo/Methylation_BeadCHiP/Downstream_analysis/invitro_rescued_genes_correlation_invivo_invitro_comparison.txt", quote = FALSE, row.names = FALSE, sep = '\t')
 
-invivo_invitro_comparison <- read.csv("invivo/Methylation_BeadCHiP/Downstream_analysis/invitro_rescued_genes_correlation_invivo_invitro_comparison.txt", sep = '\t')
-
+#Plot in vivo-in vitro correlation comparison
 invivo_invitro_comparison <- subset(invivo_invitro_comparison, invivo_invitro_comparison$FDR.invivo < 0.05 | invivo_invitro_comparison$FDR.invitro < 0.05)
 
 invivo_invitro_comparison$sig <- ifelse(invivo_invitro_comparison$FDR.invivo < 0.05 & invivo_invitro_comparison$FDR.invitro < 0.05, "both",
